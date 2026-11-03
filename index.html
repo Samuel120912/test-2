@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10243a"><link rel="manifest" href="manifest.json">
+<title>Production Calculator</title>
+<style>
+:root{--navy:#10243a;--blue:#1769aa;--bg:#f2f5f8;--green:#087f5b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:15px system-ui,-apple-system,Segoe UI,sans-serif;color:#172536}
+header{background:linear-gradient(120deg,#10243a,#1b527b);color:white;padding:24px 18px 28px}
+header h1{font-size:23px;margin:0 0 5px}header p{margin:0;color:#d6e5f2;font-size:13px}
+main{max-width:850px;margin:auto;padding:14px}
+.card{background:white;border-radius:15px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #10243a0d}
+h2{font-size:17px;margin:0 0 13px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:block;font-size:12px;color:#526273;margin-bottom:5px}input{width:100%;padding:11px;border:1px solid #ccd6df;border-radius:9px;font-size:16px;color:#14283b;background:#fff}
+.metric{background:#eef5fa;border-radius:12px;padding:14px}.metric small{display:block;color:#536879}.metric strong{display:block;font-size:25px;color:var(--green);margin-top:3px}
+.primary{background:var(--navy);color:white;border:0;border-radius:10px;padding:12px 16px;font-weight:650;width:100%;font-size:15px}
+.secondary{background:#e8eef3;color:#18334b;border:0;border-radius:10px;padding:11px 14px;font-weight:600}
+table{width:100%;border-collapse:collapse}td{padding:9px 3px;border-bottom:1px solid #e8edf1}td:last-child{text-align:right;font-weight:650}
+.note{font-size:12px;color:#637384;line-height:1.5}.actions{display:flex;gap:9px;flex-wrap:wrap}.actions button{flex:1}
+@media(min-width:650px){.grid.three{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:390px){.grid{gap:9px}input{padding:10px 8px}}
+</style></head>
+<body>
+<header><h1>Production Calculator</h1><p>Excavator PC2000-11R · Dump Truck HD785-7</p></header>
+<main>
+<section class="card"><h2>1. Data Umum</h2><div class="grid">
+<div><label>Kapasitas Vessel (m³)</label><input id="vessel" type="number" step="any" value="60"></div>
+<div><label>Kapasitas Bucket (m³)</label><input id="bucket" type="number" step="any" value="12"></div>
+<div><label>Passing per DT</label><input id="passes" type="number" step="any" value="5"></div>
+<div><label>Bucket Fill Factor (BFF)</label><input id="bff" type="number" step="any" value="0.85"></div>
+<div><label>Density (ton/m³)</label><input id="density" type="number" step="any" value="1.6"></div>
+<div><label>Efisiensi Vessel</label><input id="veff" type="number" step="any" value="0.85"></div>
+</div></section>
+<section class="card"><h2>2. Excavator – Primary Job (detik)</h2><div class="grid">
+<div><label>Digging</label><input id="dig" type="number" value="18"></div>
+<div><label>Swing Load</label><input id="swingload" type="number" value="7"></div>
+<div><label>Dumping</label><input id="dump" type="number" value="4"></div>
+<div><label>Swing Empty</label><input id="swingempty" type="number" value="7"></div>
+<div><label>Job Efficiency</label><input id="eff" type="number" step="any" value="0.85"></div>
+<div class="metric"><small>Total Cycle Time</small><strong id="cycle">36 sec</strong></div>
+</div></section>
+<section class="card"><h2>3. Hasil Produktivitas Excavator</h2><div class="grid">
+<div class="metric"><small>Produksi Excavator</small><strong id="production">867 m³/jam</strong></div>
+<div class="metric"><small>Effective Bucket</small><strong id="effective">10,20 m³</strong></div>
+</div></section>
+<section class="card"><h2>4. Hasil Dump Truck</h2><div class="grid">
+<div class="metric"><small>Volume in Vessel</small><strong id="volume">51 m³</strong></div>
+<div class="metric"><small>Estimasi Payload</small><strong id="payload">81,6 ton</strong></div>
+<div class="metric" style="grid-column:1/-1"><small>Kapasitas Loading / Kebutuhan DT per Jam</small><strong id="dt">17 DT/jam</strong></div>
+</div><p class="note">DT/jam adalah kapasitas pelayanan loading Excavator, bukan jumlah armada aktual. Jumlah armada optimal membutuhkan total hauling cycle time Dump Truck.</p></section>
+<section class="card"><h2>5. Ringkasan Simulasi</h2><table>
+<tr><td>Model Excavator</td><td>PC2000-11R</td></tr><tr><td>Model Dump Truck</td><td>HD785-7</td></tr>
+<tr><td>Cycle Time</td><td id="sCycle">36 detik</td></tr><tr><td>Volume Vessel</td><td id="sVolume">51 m³</td></tr>
+<tr><td>Payload</td><td id="sPayload">81,6 ton</td></tr><tr><td>Produksi Excavator</td><td id="sProduction">867 m³/jam</td></tr><tr><td>Kapasitas Loading</td><td id="sDT">17 DT/jam</td></tr>
+</table><div class="actions" style="margin-top:14px"><button class="secondary" id="reset">Reset Data Awal</button><button class="secondary" id="csv">Export CSV</button></div></section>
+<p class="note">Catatan: faktor efisiensi dimasukkan dalam desimal, contoh 85% = 0,85. Volume vessel dihitung sebagai nilai terkecil antara kapasitas vessel × efisiensi vessel dan bucket efektif × passing.</p>
+</main>
+<script>
+const ids=['vessel','bucket','passes','bff','density','veff','dig','swingload','dump','swingempty','eff'];
+const $=id=>document.getElementById(id), val=id=>Math.max(0,Number($(id).value)||0);
+const fmt=(x,d=2)=>Number(x).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});
+function calculate(){
+ const cycle=val('dig')+val('swingload')+val('dump')+val('swingempty');
+ const effective=val('bucket')*val('bff');
+ const volume=Math.min(val('vessel')*val('veff'),effective*val('passes'));
+ const production=cycle>0?effective*3600/cycle*val('eff'):0;
+ const payload=volume*val('density'),dt=volume>0?production/volume:0;
+ const put=(id,s)=>$(id).textContent=s;
+ put('cycle',fmt(cycle,0)+' sec');put('production',fmt(production,1)+' m³/jam');
+ put('effective',fmt(effective)+' m³');put('volume',fmt(volume)+' m³');
+ put('payload',fmt(payload)+' ton');put('dt',fmt(dt,1)+' DT/jam');
+ put('sCycle',fmt(cycle,0)+' detik');put('sVolume',fmt(volume)+' m³');
+ put('sPayload',fmt(payload)+' ton');put('sProduction',fmt(production,1)+' m³/jam');put('sDT',fmt(dt,1)+' DT/jam');
+}
+ids.forEach(id=>$(id).addEventListener('input',calculate));calculate();
+$('reset').onclick=()=>{const defaults={vessel:60,bucket:12,passes:5,bff:.85,density:1.6,veff:.85,dig:18,swingload:7,dump:4,swingempty:7,eff:.85};for(const [k,v] of Object.entries(defaults))$(k).value=v;calculate()};
+$('csv').onclick=()=>{const rows=[['Parameter','Hasil'],['Model Excavator','PC2000-11R'],['Model Dump Truck','HD785-7'],['Cycle Time', $('sCycle').textContent],['Produksi Excavator',$('sProduction').textContent],['Volume Vessel',$('sVolume').textContent],['Payload',$('sPayload').textContent],['Kapasitas Loading',$('sDT').textContent]];const csv=rows.map(r=>r.join(';')).join('\\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='hasil-production-calculator.csv';a.click();URL.revokeObjectURL(a.href)};
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+</script></body></html>
